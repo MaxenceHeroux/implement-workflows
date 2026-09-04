@@ -2,30 +2,24 @@ name: Windows CMake Build
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
-    name: Configure and build (Windows)
     runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure (create build directory)
-        shell: pwsh
-        run: |
-          cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release
+      - name: Configure CMake
+        run: cmake -S . -B build -A x64
 
       - name: Build
-        shell: pwsh
-        run: cmake --build build --config Release -- /m
+        run: cmake --build build --config Release --parallel
 
       - name: Run tests
-        shell: pwsh
         run: ctest --test-dir build -C Release --output-on-failure
-
