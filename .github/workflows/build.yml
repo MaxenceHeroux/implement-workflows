@@ -1,0 +1,50 @@
+name: CMake Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential cmake
+          else
+            brew update
+            brew install cmake
+          fi
+        shell: bash
+
+      - name: Configure with CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: cmake --build build --config Release -- -j$(nproc)
+        shell: bash
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: cmake --build build --config Release -- /m
+        shell: powershell
+
+      - name: Run tests
+        run: |
+          ctest --test-dir build -C Release --output-on-failure
+        shell: bash
